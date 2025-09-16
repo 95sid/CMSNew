@@ -1,9 +1,12 @@
 package com.collegeMS.CMS.Services;
 
+import com.collegeMS.CMS.DTOs.ProfessorDTO;
 import com.collegeMS.CMS.Entity.Professor;
 import com.collegeMS.CMS.Exceptions.ProfessorNotFoundException;
 import com.collegeMS.CMS.Repository.ProfessorRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,44 +15,51 @@ import java.util.Optional;
 public class ProfessorService {
 
     private final ProfessorRepository professorRepository;
+    private final ModelMapper mapper;
 
-    public ProfessorService(ProfessorRepository professorRepository) {
+    public ProfessorService(ProfessorRepository professorRepository, ModelMapper mapper) {
         this.professorRepository = professorRepository;
+        this.mapper = mapper;
     }
 
 
-    public List<Professor> getAllProfessor() {
-        return professorRepository.findAll();
+    public List<ProfessorDTO> getAllProfessor() {
+        List<Professor> professors =  professorRepository.findAll();
+        return professors.stream()
+                .map(professor->mapper.map(professor,ProfessorDTO.class))
+                .toList();
     }
 
 
-    public Professor getProfessorById(Long professorId) {
+    public ProfessorDTO getProfessorById(Long professorId) {
         // not exist will throw an exception
-        isProfessorIdExist(professorId);
-        Optional<Professor> professor = professorRepository.findById(professorId);
-        return professor.get();
+        Professor professor = professorRepository
+                .findById(professorId)
+                .orElseThrow(()->new ProfessorNotFoundException("Professor with this id:"+ professorId +" doesn't Exist"));
+
+        return mapper.map(professor,ProfessorDTO.class);
     }
 
-
-    public Professor updateProfessorById(Long professorId,Professor professor) {
+    @Transactional
+    public ProfessorDTO updateProfessorById(Long professorId,ProfessorDTO professorDto) {
         isProfessorIdExist(professorId);
-        return professorRepository.save(professor);
+        Professor professor = mapper.map(professorDto,Professor.class);
+        professor.setId(professorId);
+        return mapper.map(professorRepository.save(professor),ProfessorDTO.class);
     }
-
+    @Transactional
     public Boolean deleteProfessorById(Long professorId) {
         isProfessorIdExist(professorId);
         professorRepository.deleteById(professorId);
         return true;
     }
-
-
-
-    private void isProfessorIdExist(Long professorId) {
-        if(!professorRepository.existsById(professorId)) throw new ProfessorNotFoundException("Professor with this id doesn't Exist : "+ professorId);
+    @Transactional
+    public ProfessorDTO createNewProfessor(ProfessorDTO professorDto) {
+        Professor professor = mapper.map(professorDto,Professor.class);
+        return mapper.map(professorRepository.save(professor),ProfessorDTO.class);
     }
 
-
-    public Professor createNewProfessor(Professor professor) {
-        return professorRepository.save(professor);
+    private void isProfessorIdExist(Long professorId) {
+        if(!professorRepository.existsById(professorId)) throw new ProfessorNotFoundException("Professor with this id:"+ professorId +" doesn't Exist");
     }
 }

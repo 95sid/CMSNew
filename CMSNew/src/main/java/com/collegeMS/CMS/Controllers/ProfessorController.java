@@ -1,9 +1,12 @@
 package com.collegeMS.CMS.Controllers;
 
+import com.collegeMS.CMS.DTOs.ProfessorDTO;
 import com.collegeMS.CMS.Entity.Professor;
 import com.collegeMS.CMS.Repository.ProfessorRepository;
 import com.collegeMS.CMS.Services.ProfessorService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,28 +23,36 @@ public class ProfessorController {
 
 
     @GetMapping
-    public List<Professor> getAllProfessor(){
-        List<Professor> professors = professorService.getAllProfessor();
-        return professors;
+    public ResponseEntity<List<ProfessorDTO>> getAllProfessor(){
+        List<ProfessorDTO> professors = professorService.getAllProfessor();
+        return ResponseEntity.ok(professors);
     }
 
     @GetMapping(value = "{professorId}")
-    public Professor getProfessorById(@PathVariable Long professorId){
-        return professorService.getProfessorById(professorId);
+    public ResponseEntity<ProfessorDTO> getProfessorById(@PathVariable Long professorId){
+        ProfessorDTO professor = professorService.getProfessorById(professorId);
+        return ResponseEntity.ok(professor);
     }
 
     @PutMapping(value="{professorId}")
-    public Professor updateProfessorById(@PathVariable Long professorId,@RequestBody Professor professor){
-        return professorService.updateProfessorById(professorId,professor);
+    public ResponseEntity<ProfessorDTO> updateProfessorById(@PathVariable Long professorId,@Valid @RequestBody ProfessorDTO professorDto){
+        ProfessorDTO professor = professorService.updateProfessorById(professorId,professorDto);
+        return ResponseEntity.ok(professor);
     }
 
     @DeleteMapping(value="{professorId}")
-    public Boolean deleteProfessorById(@PathVariable Long professorId){
-        return professorService.deleteProfessorById(professorId);
+    public ResponseEntity<Boolean> deleteProfessorById(@PathVariable Long professorId){
+        Boolean isDeleted = professorService.deleteProfessorById(professorId);
+        if(isDeleted){
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping
-    public Professor createNewProfessor(@RequestBody @Valid Professor professor){
-        return professorService.createNewProfessor(professor);
+    public ResponseEntity<ProfessorDTO> createNewProfessor(@Valid @RequestBody ProfessorDTO professorDTO){
+        ProfessorDTO professor = professorService.createNewProfessor(professorDTO);
+        return new ResponseEntity<>(professor, HttpStatus.CREATED);
     }
 }
